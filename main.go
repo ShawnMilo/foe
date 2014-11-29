@@ -81,14 +81,14 @@ func walker(path string, info os.FileInfo, err error) error {
 }
 
 func main() {
-	paths := make([]string, 0, 50)
 	go func() {
-		for path := range cFiles {
-			paths = append(paths, path)
-		}
+		filepath.Walk(path, walker)
+		close(cFiles)
 	}()
-	filepath.Walk(path, walker)
-	close(cFiles)
+	paths := make([]string, 0, 50)
+	for path := range cFiles {
+		paths = append(paths, path)
+	}
 	if len(paths) < 1 {
 		log.Println("No results.")
 		return
