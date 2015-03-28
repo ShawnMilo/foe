@@ -40,7 +40,7 @@ func isDir(path string) bool {
 	stat, err := os.Stat(path)
 	if err != nil {
 		log.Println("Error checking whether", path, "was a directory:", err)
-        return false
+		return false
 	}
 	return stat.IsDir()
 }
