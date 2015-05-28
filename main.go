@@ -90,7 +90,7 @@ func walker(path string, info os.FileInfo, err error) error {
 		return nil
 	}
 	for _, arg := range args {
-		if !strings.Contains(strings.ToLower(info.Name()), strings.ToLower(arg)) {
+		if !strings.Contains(strings.ToLower(path), strings.ToLower(arg)) {
 			return nil
 		}
 		for _, bad := range ignore {
