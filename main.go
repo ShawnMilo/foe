@@ -77,7 +77,6 @@ func init() {
 			ignore = append(ignore, bad)
 		}
 	}
-	log.Printf("%#v\n", ignore)
 }
 
 // walker implements filepath.WalkFunc.
