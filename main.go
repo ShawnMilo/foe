@@ -3,17 +3,21 @@ package main
 import (
 	"bufio"
 	"flag"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"strings"
 )
 
 var cFiles = make(chan string)
-var path string // path to search
+var dir string // directory to search
 var args []string
+
+var ignore []string
 
 // isText determines whether this is the kind of file we
 // want to open in vim.
@@ -47,16 +51,33 @@ func isDir(path string) bool {
 
 func init() {
 	// Set up command-line flags.
-	flag.StringVar(&path, "p", ".", "path")
+	flag.StringVar(&dir, "p", ".", "path")
 	flag.Parse()
 	// Validate flags.
-	if !isDir(path) {
-		log.Fatal(path, "is not a valid path.")
+	if !isDir(dir) {
+		log.Fatal(dir, "is not a valid path.")
 	}
 	args = flag.Args()
 	if len(args) == 0 {
 		log.Fatal("no arguments passed")
 	}
+	// Read rc file if available.
+	cwd, err := os.Getwd()
+	if err != nil {
+		log.Fatal(err)
+	}
+	rc, err := ioutil.ReadFile(path.Join(cwd, ".foerc"))
+	ignore = []string{}
+	if err != nil {
+		log.Println("no rc")
+		return
+	}
+	for _, bad := range strings.Split(string(rc), "\n") {
+		if bad != "" {
+			ignore = append(ignore, bad)
+		}
+	}
+	log.Printf("%#v\n", ignore)
 }
 
 // walker implements filepath.WalkFunc.
@@ -73,6 +94,11 @@ func walker(path string, info os.FileInfo, err error) error {
 		if !strings.Contains(strings.ToLower(info.Name()), strings.ToLower(arg)) {
 			return nil
 		}
+		for _, bad := range ignore {
+			if strings.Contains(path, bad) {
+				return nil
+			}
+		}
 	}
 	if !isText(path) {
 		return nil
@@ -83,7 +109,7 @@ func walker(path string, info os.FileInfo, err error) error {
 
 func main() {
 	go func() {
-		filepath.Walk(path, walker)
+		filepath.Walk(dir, walker)
 		close(cFiles)
 	}()
 	paths := make([]string, 0, 50)
